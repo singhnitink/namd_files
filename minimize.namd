@@ -1,0 +1,50 @@
+########### minimization file #######################
+
+structure          file.psf
+coordinates        file.pdb
+
+set temperature    310  ;# target temperature
+temperature        $temperature
+
+outputName         minimize   ;# base name for output from this run
+binaryoutput       no
+# Output
+
+restartfreq         500     ;# 100steps = every 0.1ps
+dcdfreq             200
+xstFreq             500
+outputEnergies      100
+outputPressure      100
+outputTiming        100   ;# shows time per step and time to completion
+
+# Force-Field Parameters
+paraTypeCharmm	    on
+parameters          par_all36_prot.prm
+parameters          par_all36_carb.prm 
+parameters          par_all36_lipid.prm 
+parameters          par_all36_cgenff.prm 
+parameters          par_all36_na.prm
+parameters          toppar_water_ions_namd.str
+
+#These are specified by CHARMM
+exclude             scaled1-4
+1-4scaling          1.0
+switching           on
+
+# You have some freedom to choose cutoff
+cutoff              12.0 ;# may use smaller, maybe 10, with PME
+switchdist          10.0 ;# cutoff - 2
+
+# Promise that atom won't move more than 2A in a cycle
+pairlistdist        14.0 ;# cutoff + 2
+
+# Periodic Boundary conditions
+cellBasisVector1 72.00 0 0 
+cellBasisVector2 0 71.98 0 
+cellBasisVector3 0 0 71.96 
+cellorigin 35.91 36.15 35.94
+
+wrapAll             on
+
+minimize            1000          ;# lower potential energy for 1000 steps
+reinitvels          $temperature  ;# since minimization zeros velocities

@@ -1,0 +1,78 @@
+########### minimization + npt file #######################
+
+structure          file.psf
+coordinates        file.pdb
+
+set temperature    310 ;# target temperature used several times below
+
+temperature         $temperature    ;# initialize velocities randomly
+
+outputName         npt1   ;# base name for output from this run
+
+# Output
+restartfreq         1000     ;# 500steps = every 1ps
+dcdfreq             10000
+xstFreq             5000
+outputEnergies      1000
+outputPressure      1000
+outputTiming        1000  ;# shows time per step and time to completion
+
+# Force-Field Parameters
+paraTypeCharmm	    on
+parameters          par_all36_prot.prm
+parameters          par_all36_carb.prm 
+parameters          par_all36_lipid.prm 
+parameters          par_all36_cgenff.prm 
+parameters          par_all36_na.prm
+parameters          toppar_water_ions_namd.str
+
+# These are specified by CHARMM
+exclude             scaled1-4
+1-4scaling          1.0
+switching           on
+
+# You have some freedom choosing the cutoff
+cutoff              12.0 ;# may use smaller, maybe 10., with PME
+switchdist          10.0 ;# cutoff - 2.
+
+# Promise that atom won't move more than 2A in a cycle
+pairlistdist        14.0 ;# cutoff + 2.
+
+# Integrator Parameters
+timestep            2.0  ;# 2fs/step
+rigidBonds          all  ;# needed for 2fs steps
+nonbondedFreq       1    ;# nonbonded forces every step
+fullElectFrequency  2    ;# PME only every other step
+
+# Constant Temperature Control
+langevin            on            ;# langevin dynamics
+langevinDamping     1.            ;# damping coefficient of 1/ps
+langevinTemp        $temperature  ;# random noise at this level
+langevinHydrogen    off            ;# don't couple bath to hydrogens
+
+# Periodic Boundary conditions
+cellBasisVector1 72.00 0 0 
+cellBasisVector2 0 71.98 0 
+cellBasisVector3 0 0 71.96 
+cellorigin 35.92 36.12 35.95
+
+wrapAll             on
+
+# PME (for full-system periodic electrostatics)
+PME                 yes
+PMEGridSpacing      1.0
+
+# Constant Pressure Control (variable volume)
+useGroupPressure      yes ;# needed for rigidBonds
+useFlexibleCell       no
+useConstantArea       no
+
+langevinPiston        on
+langevinPistonTarget  1.01325 ;#  in bar -> 1 atm
+langevinPistonPeriod  100.0
+langevinPistonDecay   50.0
+langevinPistonTemp    $temperature
+
+minimize            2500          ;# lower potential energy for 1000 steps
+reinitvels          $temperature  ;# since minimization zeros velocities
+run 250000000 ;#500ns

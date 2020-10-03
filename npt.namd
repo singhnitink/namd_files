@@ -1,0 +1,93 @@
+########### NPT file #######################
+
+structure          file.psf
+coordinates        file.pdb
+
+set temperature    310  ;# target temperature
+
+set temperature    310
+set outputname     npt
+
+
+firsttimestep      0
+
+# continuing a run
+set inputname      minimize       ;# only need to edit this in one place!
+binCoordinates     $inputname.restart.coor  ;# coordinates from last run (binary)
+binVelocities      $inputname.restart.vel   ;# velocities from last run (binary)
+extendedSystem	   $inputname.xsc   ;# cell dimensions from last run
+
+
+#############################################################
+## SIMULATION PARAMETERS                                   ##
+#############################################################
+
+# Output
+outputName          $outputname
+#We will write restart files, coordinate trajectory .dcd files, and extended system (periodic cell) trajectory .xst files at regular intervals.
+
+restartfreq         1000     ;# 500steps = every 1ps
+dcdfreq             10000
+xstFreq             5000
+outputEnergies      1000
+outputPressure      1000
+outputTiming        1000  ;# shows time per step and time to completion
+
+# Force-Field Parameters
+paraTypeCharmm	    on
+parameters          par_all36_prot.prm
+parameters          par_all36_carb.prm 
+parameters          par_all36_lipid.prm 
+parameters          par_all36_cgenff.prm 
+parameters          par_all36_na.prm
+parameters          toppar_water_ions_namd.str
+
+# These are specified by CHARMM
+exclude             scaled1-4
+1-4scaling          1.0
+switching           on
+
+# You have some freedom to choose cutoff
+cutoff              12.0 ;# may use smaller, maybe 10, with PME
+switchdist          10.0 ;# cutoff - 2
+
+# Promise that atom won't move more than 2A in a cycle
+pairlistdist        14.0 ;# cutoff + 2
+
+
+# Integrator Parameters
+timestep            2.0  ;# 2fs/step
+rigidBonds          all  ;# needed for 2fs steps
+nonbondedFreq       1
+fullElectFrequency  2  
+stepspercycle       10
+
+
+# Constant Temperature Control
+langevin            on    ;# do langevin dynamics
+langevinDamping     1     ;# damping coefficient (gamma) of 1/ps
+langevinTemp        $temperature
+langevinHydrogen    off    ;# don't couple langevin bath to hydrogens
+
+wrapAll             on
+
+# PME (for full-system periodic electrostatics)
+PME                 yes
+PMEGridSpacing      1.0
+
+# Constant Pressure Control (variable volume)
+useGroupPressure      yes ;# needed for rigidBonds
+useFlexibleCell       no
+useConstantArea       no
+
+langevinPiston        on
+langevinPistonTarget  1.01325 ;#  in bar -> 1 atm
+langevinPistonPeriod  100.0
+langevinPistonDecay   50.0
+langevinPistonTemp    $temperature
+
+#############################################################
+## EXECUTION SCRIPT                                        ##
+#############################################################
+
+run 200000000 ;# 5000steps*2
